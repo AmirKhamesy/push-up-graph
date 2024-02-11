@@ -10,10 +10,24 @@ let reps = 0;
 let upPosition = false;
 let downPosition = false;
 let highlightBack = false;
+let canvas;
+let showingPushupView = false;
 
 function addPushup() {
   reps++;
   updateLocalStorage();
+}
+
+function togglePushUpView() {
+  if (showingPushupView) {
+    video.remove();
+    canvas.hide();
+    showingPushupView = false;
+  } else {
+    setup();
+    canvas.show();
+    showingPushupView = true;
+  }
 }
 
 async function init() {
@@ -49,6 +63,8 @@ async function setup() {
   createCanvas(640, 480);
   video = createCapture(VIDEO, videoReady);
   video.hide();
+  canvas = select("canvas");
+  showingPushupView = true;
   await init();
 }
 

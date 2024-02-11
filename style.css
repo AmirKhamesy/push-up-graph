@@ -12,3 +12,19 @@ canvas {
   left: 0;
   right: 0;
 }
+
+#pushupTable {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+#pushupTable th,
+#pushupTable td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+#pushupTable th {
+  background-color: #f2f2f2;
+}
