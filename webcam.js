@@ -204,7 +204,7 @@ function inDownPosition() {
 
 function updateLocalStorage() {
   let currentDate = new Date();
-  let dateString = currentDate.toDateString();
+  let dateString = currentDate.toLocaleDateString();
   let pushupsData = JSON.parse(localStorage.getItem("pushups")) || {};
 
   if (pushupsData[dateString]) {
@@ -232,7 +232,16 @@ function displayPushupsTable() {
     let row = table.insertRow(1);
     let cell1 = row.insertCell(0);
     let cell2 = row.insertCell(1);
-    cell1.innerHTML = date;
+
+    // Convert date to long date format
+    let longDate = new Date(date).toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+
+    cell1.innerHTML = longDate;
     cell2.innerHTML = pushupsData[date];
   }
 }
