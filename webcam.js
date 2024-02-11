@@ -10,9 +10,15 @@ let reps = 0;
 let upPosition = false;
 let downPosition = false;
 let highlightBack = false;
-let backWarningGiven = false;
+
+function addPushup() {
+  reps++;
+  updateLocalStorage();
+}
 
 async function init() {
+  displayPushupsTable();
+
   detectorConfig = {
     modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING,
   };
@@ -37,25 +43,18 @@ async function init() {
   await getPoses();
 }
 
-async function videoReady() {
-  //console.log('video ready');
-}
+async function videoReady() {}
 
 async function setup() {
-  var msg = new SpeechSynthesisUtterance("Loading, please wait...");
-  window.speechSynthesis.speak(msg);
   createCanvas(640, 480);
   video = createCapture(VIDEO, videoReady);
-  //video.size(960, 720);
   video.hide();
-
   await init();
 }
 
 async function getPoses() {
   poses = await detector.estimatePoses(video.elt);
   setTimeout(getPoses, 0);
-  //console.log(poses);
 }
 
 function draw() {
@@ -63,21 +62,16 @@ function draw() {
   translate(width, 0);
   scale(-1, 1);
   image(video, 0, 0, video.width, video.height);
-
-  // Draw keypoints and skeleton
   drawKeypoints();
   if (skeleton) {
     drawSkeleton();
   }
-
-  // Write text
   fill(255);
   strokeWeight(2);
   stroke(51);
   translate(width, 0);
   scale(-1, 1);
   textSize(40);
-
   if (poses && poses.length > 0) {
     let pushupString = `Push-ups completed: ${reps}`;
     text(pushupString, 100, 90);
@@ -99,9 +93,6 @@ function drawKeypoints() {
         circle(x, y, 16);
       }
       if (count == 17) {
-        //console.log('Whole body visible!');
-      } else {
-        //console.log('Not fully visible!');
       }
       updateArmAngle();
       updateBackAngle();
@@ -111,23 +102,19 @@ function drawKeypoints() {
   }
 }
 
-// Draws lines between the keypoints
 function drawSkeleton() {
   confidence_threshold = 0.4;
-
   if (poses && poses.length > 0) {
     for (const [key, value] of Object.entries(edges)) {
       const p = key.split(",");
       const p1 = p[0];
       const p2 = p[1];
-
       const y1 = poses[0].keypoints[p1].y;
       const x1 = poses[0].keypoints[p1].x;
       const c1 = poses[0].keypoints[p1].score;
       const y2 = poses[0].keypoints[p2].y;
       const x2 = poses[0].keypoints[p2].x;
       const c2 = poses[0].keypoints[p2].score;
-
       if (c1 > confidence_threshold && c2 > confidence_threshold) {
         if (
           highlightBack == true &&
@@ -150,16 +137,12 @@ function updateArmAngle() {
   leftWrist = poses[0].keypoints[9];
   leftShoulder = poses[0].keypoints[5];
   leftElbow = poses[0].keypoints[7];
-
   angle =
     (Math.atan2(leftWrist.y - leftElbow.y, leftWrist.x - leftElbow.x) -
       Math.atan2(leftShoulder.y - leftElbow.y, leftShoulder.x - leftElbow.x)) *
     (180 / Math.PI);
-
   if (angle < 0) {
-    //angle = angle + 360;
   }
-
   if (
     leftWrist.score > 0.2 &&
     leftElbow.score > 0.2 &&
@@ -167,7 +150,6 @@ function updateArmAngle() {
   ) {
     elbowAngle = angle;
   } else {
-    //console.log('Cannot see elbow');
   }
 }
 
@@ -175,7 +157,6 @@ function updateBackAngle() {
   var leftShoulder = poses[0].keypoints[5];
   var leftHip = poses[0].keypoints[11];
   var leftKnee = poses[0].keypoints[13];
-
   angle =
     (Math.atan2(leftKnee.y - leftHip.y, leftKnee.x - leftHip.x) -
       Math.atan2(leftShoulder.y - leftHip.y, leftShoulder.x - leftHip.x)) *
@@ -184,25 +165,18 @@ function updateBackAngle() {
   if (leftKnee.score > 0.2 && leftHip.score > 0.2 && leftShoulder.score > 0.2) {
     backAngle = angle;
   }
-
   if (backAngle < 30 || backAngle > 150) {
     highlightBack = false;
   } else {
     highlightBack = true;
-    if (backWarningGiven != true) {
-      var msg = new SpeechSynthesisUtterance("Keep your back straight");
-      window.speechSynthesis.speak(msg);
-      backWarningGiven = true;
-    }
   }
 }
 
 function inUpPosition() {
   if (elbowAngle > 160 && elbowAngle < 200) {
-    if (downPosition == true) {
-      var msg = new SpeechSynthesisUtterance(str(reps + 1));
-      window.speechSynthesis.speak(msg);
+    if (!upPosition) {
       reps = reps + 1;
+      updateLocalStorage();
     }
     upPosition = true;
     downPosition = false;
@@ -214,9 +188,7 @@ function inDownPosition() {
   if (poses[0].keypoints[0].y > poses[0].keypoints[7].y) {
     elbowAboveNose = true;
   } else {
-    //console.log('Elbow is not above nose')
   }
-
   if (
     highlightBack == false &&
     elbowAboveNose &&
@@ -224,10 +196,43 @@ function inDownPosition() {
     abs(elbowAngle) < 110
   ) {
     if (upPosition == true) {
-      var msg = new SpeechSynthesisUtterance("Up");
-      window.speechSynthesis.speak(msg);
     }
     downPosition = true;
     upPosition = false;
+  }
+}
+
+function updateLocalStorage() {
+  let currentDate = new Date();
+  let dateString = currentDate.toDateString();
+  let pushupsData = JSON.parse(localStorage.getItem("pushups")) || {};
+
+  if (pushupsData[dateString]) {
+    pushupsData[dateString] += 1; // Increment reps only when a new push-up is completed
+  } else {
+    pushupsData[dateString] = 1; // Set reps to 1 for a new day
+  }
+
+  localStorage.setItem("pushups", JSON.stringify(pushupsData));
+
+  displayPushupsTable();
+}
+
+function displayPushupsTable() {
+  let pushupsData = JSON.parse(localStorage.getItem("pushups")) || {};
+  let table = document.getElementById("pushupTable");
+
+  // Clear existing table rows
+  while (table.rows.length > 1) {
+    table.deleteRow(1);
+  }
+
+  // Populate the table with pushup data
+  for (let date in pushupsData) {
+    let row = table.insertRow(1);
+    let cell1 = row.insertCell(0);
+    let cell2 = row.insertCell(1);
+    cell1.innerHTML = date;
+    cell2.innerHTML = pushupsData[date];
   }
 }
