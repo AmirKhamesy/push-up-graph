@@ -14,7 +14,7 @@ let backWarningGiven = false;
 
 async function init() {
   detectorConfig = {
-    modelType: poseDetection.movenet.modelType.SINGLEPOSE_THUNDER,
+    modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING,
   };
   detector = await poseDetection.createDetector(
     poseDetection.SupportedModels.MoveNet,
@@ -91,7 +91,7 @@ function drawKeypoints() {
   if (poses && poses.length > 0) {
     for (let kp of poses[0].keypoints) {
       const { x, y, score } = kp;
-      if (score > 0.3) {
+      if (score > 0.2) {
         count = count + 1;
         fill(255);
         stroke(0);
@@ -113,7 +113,7 @@ function drawKeypoints() {
 
 // Draws lines between the keypoints
 function drawSkeleton() {
-  confidence_threshold = 0.5;
+  confidence_threshold = 0.4;
 
   if (poses && poses.length > 0) {
     for (const [key, value] of Object.entries(edges)) {
@@ -147,11 +147,6 @@ function drawSkeleton() {
 }
 
 function updateArmAngle() {
-  /*
-  rightWrist = poses[0].keypoints[10];
-  rightShoulder = poses[0].keypoints[6];
-  rightElbow = poses[0].keypoints[8];
-  */
   leftWrist = poses[0].keypoints[9];
   leftShoulder = poses[0].keypoints[5];
   leftElbow = poses[0].keypoints[7];
@@ -166,11 +161,10 @@ function updateArmAngle() {
   }
 
   if (
-    leftWrist.score > 0.3 &&
-    leftElbow.score > 0.3 &&
-    leftShoulder.score > 0.3
+    leftWrist.score > 0.2 &&
+    leftElbow.score > 0.2 &&
+    leftShoulder.score > 0.2
   ) {
-    //console.log(angle);
     elbowAngle = angle;
   } else {
     //console.log('Cannot see elbow');
@@ -187,11 +181,11 @@ function updateBackAngle() {
       Math.atan2(leftShoulder.y - leftHip.y, leftShoulder.x - leftHip.x)) *
     (180 / Math.PI);
   angle = angle % 180;
-  if (leftKnee.score > 0.3 && leftHip.score > 0.3 && leftShoulder.score > 0.3) {
+  if (leftKnee.score > 0.2 && leftHip.score > 0.2 && leftShoulder.score > 0.2) {
     backAngle = angle;
   }
 
-  if (backAngle < 20 || backAngle > 160) {
+  if (backAngle < 30 || backAngle > 150) {
     highlightBack = false;
   } else {
     highlightBack = true;
@@ -204,8 +198,7 @@ function updateBackAngle() {
 }
 
 function inUpPosition() {
-  if (elbowAngle > 170 && elbowAngle < 200) {
-    //console.log('In up position')
+  if (elbowAngle > 160 && elbowAngle < 200) {
     if (downPosition == true) {
       var msg = new SpeechSynthesisUtterance(str(reps + 1));
       window.speechSynthesis.speak(msg);
@@ -227,10 +220,9 @@ function inDownPosition() {
   if (
     highlightBack == false &&
     elbowAboveNose &&
-    abs(elbowAngle) > 70 &&
-    abs(elbowAngle) < 100
+    abs(elbowAngle) > 50 &&
+    abs(elbowAngle) < 110
   ) {
-    //console.log('In down position')
     if (upPosition == true) {
       var msg = new SpeechSynthesisUtterance("Up");
       window.speechSynthesis.speak(msg);
