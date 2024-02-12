@@ -32,6 +32,7 @@ function togglePushUpView() {
 
 async function init() {
   displayPushupsTable();
+  setUpSquaresForGraph();
 
   detectorConfig = {
     modelType: poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING,
@@ -261,3 +262,65 @@ function displayPushupsTable() {
     cell2.innerHTML = pushupsData[date];
   }
 }
+
+function setUpSquaresForGraph() {
+  const squares = document.querySelector(".squares");
+  const startDate = new Date("January 1, 2024"); // Set your desired start date
+  for (let i = 0; i < 365; i++) {
+    const currentDate = new Date(startDate);
+    currentDate.setDate(startDate.getDate() + i);
+    const formattedDate = currentDate.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    });
+
+    const level = 0;
+    const li = document.createElement("li");
+    li.setAttribute("data-level", level);
+    li.setAttribute("title", formattedDate); // Set the formatted date as the tooltip
+    li.textContent = ""; // You can add some content to the li if needed
+    squares.appendChild(li);
+  }
+}
+function convertToDayOfYear(dateString) {
+  // Parse the date string into a Date object
+  const parts = dateString.split("/");
+  const month = parseInt(parts[0], 10);
+  const day = parseInt(parts[1], 10);
+  const year = parseInt(parts[2], 10);
+
+  const inputDate = new Date(year, month - 1, day); // month is 0-indexed in JavaScript Date
+
+  // Calculate the day of the year
+  const startOfYear = new Date(year, 0, 1);
+  const timeDifference = inputDate - startOfYear;
+  const dayOfYear = Math.floor(timeDifference / (24 * 60 * 60 * 1000)) + 1;
+
+  return dayOfYear;
+}
+
+window.addEventListener("load", function () {
+  let pushupsData = JSON.parse(localStorage.getItem("pushups")) || {};
+  const max = Math.max(...Object.values(pushupsData));
+  const increment = Math.ceil(max / 3);
+
+  for (let date in pushupsData) {
+    const dateNumber = convertToDayOfYear(date);
+
+    const pushUpsForDate = pushupsData[date];
+
+    const relativeValue = Math.ceil(pushUpsForDate / increment);
+
+    //get ith sqaure and change color
+    const squares = document.querySelector(".squares");
+    const square = squares.children[dateNumber - 1];
+    square.attributes["data-level"].value = relativeValue;
+
+    //Append total number of push ups to the title
+    const existingTitle = square.getAttribute("title");
+    const updatedTitle = `${existingTitle}, ${pushUpsForDate} push up${
+      pushUpsForDate > 1 ? "s" : ""
+    }`;
+    square.setAttribute("title", updatedTitle);
+  }
+});
